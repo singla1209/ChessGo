@@ -21,7 +21,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// Elements
+// DOM elements
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const signUpBtn = document.getElementById('signup');
@@ -30,16 +30,24 @@ const logoutBtn = document.getElementById('logout');
 const userList = document.getElementById('user-list');
 
 signUpBtn.onclick = async () => {
-  await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => alert(e.message));
+  try {
+    await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+  } catch(e) {
+    alert(e.message);
+  }
 };
 
 signInBtn.onclick = async () => {
-  await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => alert(e.message));
+  try {
+    await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+  } catch(e) {
+    alert(e.message);
+  }
 };
 
 logoutBtn.onclick = async () => {
-  if(currentUser){
-    await remove(ref(db, 'presence/' + currentUser.uid)); // Remove presence on logout
+  if(currentUser) {
+    await remove(ref(db, 'presence/' + currentUser.uid));
   }
   await signOut(auth);
 };
@@ -47,7 +55,6 @@ logoutBtn.onclick = async () => {
 let currentUser = null;
 let currentGameId = null;
 
-// On auth state changed
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
   if(user) {
@@ -57,16 +64,16 @@ onAuthStateChanged(auth, (user) => {
     onDisconnect(presRef).remove();
 
     listenOnlineUsers();
-    // Clear or prepare UI/game for user
+    listenIncomingChallenges();
+
   } else {
-    // Clear UI on logout
     userList.innerHTML = '';
     currentGameId = null;
   }
 });
 
-// Show online users except self and enable challenge
-async function listenOnlineUsers() {
+
+function listenOnlineUsers() {
   onValue(ref(db, 'presence'), (snapshot) => {
     userList.innerHTML = '';
     snapshot.forEach(childSnap => {
@@ -74,9 +81,14 @@ async function listenOnlineUsers() {
       const data = childSnap.val();
       if(uid !== currentUser.uid && data.status === 'online'){
         const li = document.createElement('li');
-        li.textContent = data.email;
+        li.textContent = data.email + ' ';
         li.style.cursor = 'pointer';
-        li.style.color = 'green'; // green dot style could be better with CSS
+        li.style.color = 'green';
+        const greenDot = document.createElement('span');
+        greenDot.textContent = '●';
+        greenDot.style.color = 'green';
+        greenDot.style.fontSize = '1.5em';
+        li.appendChild(greenDot);
         li.onclick = () => {
           if(confirm(`Challenge ${data.email} to play?`)){
             createOrJoinGame(uid, data.email);
@@ -88,19 +100,19 @@ async function listenOnlineUsers() {
   });
 }
 
-// Create or join game with opponent
+// Send a challenge invitation
 async function createOrJoinGame(opponentUid, opponentEmail) {
-  if(!currentUser) return alert("Login required to challenge");
-  // Create unique gameId sorted by uid to avoid duplicates
-  let gameId = [currentUser.uid, opponentUid].sort().join('_');
+  if(!currentUser) return alert("Login required");
+
+  // Use sorted UIDs for unique game ID
+  const gameId = [currentUser.uid, opponentUid].sort().join('_');
   currentGameId = gameId;
 
   const gameRef = ref(db, 'games/' + gameId);
   const gameSnap = await get(gameRef);
 
-  if (!gameSnap.exists()) {
-    // Initial chess board state and game info - adapt your own chess board array here.
-    const initBoard = yourInitialBoardState(); 
+  if(!gameSnap.exists()) {
+    const initBoard = yourInitialBoardState(); // Your chess board starter
     await set(gameRef, {
       players: { white: currentUser.uid, black: opponentUid },
       turn: 'white',
@@ -110,23 +122,48 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
       lastUpdateBy: null
     });
   }
+
   listenGame(gameId);
+
+  // Notify challenged user
+  await set(ref(db, 'challenges/' + opponentUid), {
+    from: currentUser.uid,
+    email: currentUser.email,
+    gameId: gameId,
+    timestamp: Date.now()
+  });
 }
 
+// Listen for incoming challenge requests
+function listenIncomingChallenges() {
+  const challengeRef = ref(db, 'challenges/' + currentUser.uid);
+  onValue(challengeRef, (snap) => {
+    if(snap.exists()) {
+      const challenge = snap.val();
+      if(confirm(`${challenge.email} challenged you to a game. Accept?`)){
+        currentGameId = challenge.gameId;
+        listenGame(currentGameId);
+      }
+      // Remove challenge after prompt
+      remove(challengeRef);
+    }
+  });
+}
+
+// Listen for game state changes and update UI
 function listenGame(gameId){
   const gameRef = ref(db, 'games/' + gameId);
-  onValue(gameRef, (snapshot) => {
-    if (!snapshot.exists()) return;
-    const data = snapshot.val();
+  onValue(gameRef, (snap) => {
+    if(!snap.exists()) return;
+    const data = snap.val();
 
     board = data.board;
     whiteToMove = (data.turn === 'white');
     render();
-
-    // You can show current turn, player info
   });
 }
 
+// Push move updates to DB
 async function pushMove(from, to){
   if(!currentGameId) return;
   const gameRef = ref(db, 'games/' + currentGameId);
@@ -138,7 +175,7 @@ async function pushMove(from, to){
   });
 }
 
-// Patch existing movePiece to push updates
+// Wrap existing movePiece to push changes
 const oldMovePiece = window.movePiece;
 window.movePiece = function(from, to){
   oldMovePiece(from, to);
