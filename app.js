@@ -746,23 +746,34 @@ function movePiece(from, to, promotion){
 const oldMovePiece = window.movePiece;
 
 window.movePiece = function(from, to){
-  if(!window.aiMode){
+  if(!window.aiMode){  // multiplayer mode
     if(!currentUser){
       alert("Not signed in");
       return;
     }
-    if(whiteToMove && currentUser.uid !== window.currentGamePlayers.white){
+
+    const userIsWhite = (currentUser.uid === window.currentGamePlayers.white);
+    const userIsBlack = (currentUser.uid === window.currentGamePlayers.black);
+
+    if(whiteToMove && !userIsWhite){
       alert("Not your turn (White's move)");
       return;
     }
-    if(!whiteToMove && currentUser.uid !== window.currentGamePlayers.black){
+    if(!whiteToMove && !userIsBlack){
       alert("Not your turn (Black's move)");
+      return;
+    }
+
+    const piece = board[from];
+    if((userIsWhite && !isWhite(piece)) || (userIsBlack && !isBlack(piece))){
+      alert("You can only move your own pieces");
       return;
     }
   }
   oldMovePiece(from, to);
   pushMove(from, to);
 };
+
 
 
 
