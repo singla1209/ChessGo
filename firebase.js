@@ -160,8 +160,20 @@ function listenGame(gameId){
     board = data.board;
     whiteToMove = (data.turn === 'white');
     render();
+
+    if(data.players.white && data.players.black){
+      window.aiMode = false;  // Disable AI in multiplayer
+    } else {
+      window.aiMode = true;   // Enable AI in singleplayer
+      window.aiSide = data.players.black ? 'black' : 'white';
+      maybeAIMove();
+    }
+
+    // Expose current game players for move validation
+    window.currentGamePlayers = data.players;
   });
 }
+
 
 // Push move updates to DB
 async function pushMove(from, to){

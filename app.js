@@ -741,6 +741,27 @@ function movePiece(from, to, promotion){
   }
 }
 
+// Your existing movePiece implementation above ...
+
+const oldMovePiece = window.movePiece;
+
+window.movePiece = function(from, to){
+  if(!window.aiMode) {  // multiplayer mode
+    if(!currentUser) return alert("Not logged in");
+    if(currentUser.uid !== (window.currentGamePlayers.white) && whiteToMove){
+      alert("Not your turn!");
+      return;
+    }
+    if(currentUser.uid !== (window.currentGamePlayers.black) && !whiteToMove){
+      alert("Not your turn!");
+      return;
+    }
+  }
+  oldMovePiece(from, to);
+  pushMove(from, to);
+};
+
+
 // ---------- Rules ----------
 function legalMoves(i){
   const pc = board[i];
