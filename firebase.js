@@ -54,6 +54,19 @@ logoutBtn.onclick = async () => {
 
 let currentUser = null;
 let currentGameId = null;
+let whiteToMove = true; // this should be kept in sync with your game state
+
+// Declare pushMove globally
+window.pushMove = async function(from, to){
+  if(!currentGameId) return;
+  const gameRef = ref(db, 'games/' + currentGameId);
+  await update(gameRef, {
+    board,
+    turn: whiteToMove ? 'white' : 'black',
+    lastMove: { from, to, at: Date.now() },
+    lastUpdateBy: currentUser.uid
+  });
+};
 
 onAuthStateChanged(auth, (user) => {
   currentUser = user;
