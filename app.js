@@ -746,25 +746,18 @@ function movePiece(from, to, promotion){
 const oldMovePiece = window.movePiece;
 
 window.movePiece = function(from, to){
-  if(!window.aiMode) {  // multiplayer mode
+  if(!window.aiMode){
     if(!currentUser){
-      alert("Move blocked: Not logged in");
+      alert("Not signed in");
       return;
     }
-    console.log("Current Player UID:", currentUser.uid);
-    console.log("Game players:", window.currentGamePlayers);
-    console.log("Turn is white?", whiteToMove);
-    
-    if(whiteToMove){
-      if(currentUser.uid !== window.currentGamePlayers.white){
-        alert("Not your turn! (white's move)");
-        return;
-      }
-    } else {
-      if(currentUser.uid !== window.currentGamePlayers.black){
-        alert("Not your turn! (black's move)");
-        return;
-      }
+    if(whiteToMove && currentUser.uid !== window.currentGamePlayers.white){
+      alert("Not your turn (White's move)");
+      return;
+    }
+    if(!whiteToMove && currentUser.uid !== window.currentGamePlayers.black){
+      alert("Not your turn (Black's move)");
+      return;
     }
   }
   oldMovePiece(from, to);

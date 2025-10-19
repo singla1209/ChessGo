@@ -174,18 +174,22 @@ function listenGame(gameId){
     whiteToMove = (data.turn === 'white');
     render();
 
-    if(data.players.white && data.players.black){
-      window.aiMode = false;  // Disable AI in multiplayer
+    if(data.players && data.players.white && data.players.black){
+      // Multiplayer mode: Disable AI
+      window.aiMode = false;
+      statusEl.textContent = 'Multiplayer: ' + (whiteToMove ? 'White' : 'Black') + '\'s turn';
     } else {
-      window.aiMode = true;   // Enable AI in singleplayer
-      window.aiSide = data.players.black ? 'black' : 'white';
+      // Single player mode: Enable AI on correct side
+      window.aiMode = true;
+      window.aiSide = data.players?.black ? 'black' : 'white';
+      statusEl.textContent = 'Single player mode';
       maybeAIMove();
     }
 
-    // Expose current game players for move validation
-    window.currentGamePlayers = data.players;
+    window.currentGamePlayers = data.players || {};
   });
 }
+
 
 
 // Push move updates to DB
