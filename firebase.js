@@ -173,30 +173,25 @@ let playerColor = null;
 
 function listenGame(gameId){
   const gameRef = ref(db, 'games/' + gameId);
-  
+
   onValue(gameRef, (snap) => {
     if(!snap.exists()) return;
     const data = snap.val();
 
-    // Update local board only if it's different
-    if (JSON.stringify(board) !== JSON.stringify(data.board)) {
-      board = data.board.slice();
-      whiteToMove = (data.turn === 'white');
-      canCastleWK = !!data.canCastleWK;
-      canCastleWQ = !!data.canCastleWQ;
-      canCastleBK = !!data.canCastleBK;
-      canCastleBQ = !!data.canCastleBQ;
-      enPassantTarget = data.enPassantTarget ?? null;
-      lastFrom = data.lastFrom ?? null;
-      lastTo = data.lastTo ?? null;
-      kingInCheckIndex = data.kingInCheckIndex ?? null;
-      capturedByWhite = data.capturedByWhite ?? [];
-      capturedByBlack = data.capturedByBlack ?? [];
-      moveLog = data.moveLog ?? [];
-
-      render();
-      renderCapturedPanels();
-    }
+    // Always update local board from Firebase (first load + moves)
+    board = Array.isArray(data.board) ? data.board.slice() : board;
+    whiteToMove = (data.turn === 'white');
+    canCastleWK = !!data.canCastleWK;
+    canCastleWQ = !!data.canCastleWQ;
+    canCastleBK = !!data.canCastleBK;
+    canCastleBQ = !!data.canCastleBQ;
+    enPassantTarget = data.enPassantTarget ?? null;
+    lastFrom = data.lastFrom ?? null;
+    lastTo = data.lastTo ?? null;
+    kingInCheckIndex = data.kingInCheckIndex ?? null;
+    capturedByWhite = data.capturedByWhite ?? [];
+    capturedByBlack = data.capturedByBlack ?? [];
+    moveLog = data.moveLog ?? [];
 
     // Identify this user's color
     if (currentUser && data.players) {
@@ -204,11 +199,16 @@ function listenGame(gameId){
       else if (currentUser.uid === data.players.black) playerColor = 'black';
     }
 
+    // Render board and trays after updating
+    render();
+    renderCapturedPanels();
+
     // Show turn info
     const myTurn = (whiteToMove && playerColor === 'white') || (!whiteToMove && playerColor === 'black');
     statusEl.textContent = myTurn ? "Your turn" : "Opponent's turn";
   });
 }
+
 
 
 // Push move updates to DB
