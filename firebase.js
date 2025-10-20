@@ -104,7 +104,6 @@ function listenOnlineUsers() {
 async function createOrJoinGame(opponentUid, opponentEmail) {
   if(!currentUser) return alert("Login required");
 
-  // Use sorted UIDs for unique game ID
   const gameId = [currentUser.uid, opponentUid].sort().join('_');
   currentGameId = gameId;
 
@@ -112,7 +111,7 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
   const gameSnap = await get(gameRef);
 
   if(!gameSnap.exists()) {
-    const initBoard = yourInitialBoardState(); // Your chess board starter
+    const initBoard = yourInitialBoardState(); 
     await set(gameRef, {
       players: { white: currentUser.uid, black: opponentUid },
       turn: 'white',
@@ -123,9 +122,27 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
     });
   }
 
-  listenGame(gameId);
+  listenGame(gameId); // ✅ call listener
 
-  // Notify challenged user
+  // Paste or define your listener here or inside listenGame()
+  gameRef.on('value', (snapshot) => {
+    const gameState = snapshot.val();
+    if (!gameState) return;
+
+    if (gameState.lastUpdateBy === currentUser.uid) return; // skip your own move
+
+    board = gameState.board.slice();
+    whiteToMove = (gameState.turn === 'white');
+    lastFrom = gameState.lastMove?.from ?? null;
+    lastTo = gameState.lastMove?.to ?? null;
+
+    render();
+    renderCapturedPanels();
+
+    const myTurn = (whiteToMove && myPlayerColor === 'white') || (!whiteToMove && myPlayerColor === 'black');
+    statusEl.textContent = myTurn ? "Your turn" : "Opponent's turn";
+  });
+
   await set(ref(db, 'challenges/' + opponentUid), {
     from: currentUser.uid,
     email: currentUser.email,
@@ -133,6 +150,7 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
     timestamp: Date.now()
   });
 }
+
 
 // Listen for incoming challenge requests
 function listenIncomingChallenges() {
@@ -155,12 +173,30 @@ let playerColor = null;
 
 function listenGame(gameId){
   const gameRef = ref(db, 'games/' + gameId);
+  
   onValue(gameRef, (snap) => {
     if(!snap.exists()) return;
     const data = snap.val();
 
-    board = data.board;
-    whiteToMove = (data.turn === 'white');
+    // Update local board only if it's different
+    if (JSON.stringify(board) !== JSON.stringify(data.board)) {
+      board = data.board.slice();
+      whiteToMove = (data.turn === 'white');
+      canCastleWK = !!data.canCastleWK;
+      canCastleWQ = !!data.canCastleWQ;
+      canCastleBK = !!data.canCastleBK;
+      canCastleBQ = !!data.canCastleBQ;
+      enPassantTarget = data.enPassantTarget ?? null;
+      lastFrom = data.lastFrom ?? null;
+      lastTo = data.lastTo ?? null;
+      kingInCheckIndex = data.kingInCheckIndex ?? null;
+      capturedByWhite = data.capturedByWhite ?? [];
+      capturedByBlack = data.capturedByBlack ?? [];
+      moveLog = data.moveLog ?? [];
+
+      render();
+      renderCapturedPanels();
+    }
 
     // Identify this user's color
     if (currentUser && data.players) {
@@ -168,9 +204,12 @@ function listenGame(gameId){
       else if (currentUser.uid === data.players.black) playerColor = 'black';
     }
 
-    render();
+    // Show turn info
+    const myTurn = (whiteToMove && playerColor === 'white') || (!whiteToMove && playerColor === 'black');
+    statusEl.textContent = myTurn ? "Your turn" : "Opponent's turn";
   });
 }
+
 
 // Push move updates to DB
 async function pushMove(from, to){

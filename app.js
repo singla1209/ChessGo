@@ -24,6 +24,13 @@ const START_BOARD = [
   'R','N','B','Q','K','B','N','R'
 ];
 
+
+// --- Multiplayer Online Setup ---
+const gameId = "YOUR_GAME_ID"; // generate per match
+const myPlayerEmail = firebase.auth().currentUser.email;
+const gameRef = firebase.database().ref(`games/${gameId}`);
+let myPlayerColor = null; // 'white' or 'black', assigned by match setup
+
 // --------- Sound Manager ---------
 const SFX = {
   move: new Audio('sounds/move-self.mp3'),
@@ -548,56 +555,59 @@ function render(){
   renderCapturedPanels(); // keep trays updated
 }
 
-function onSquareClick(e){
-  if(gameOver) return;
+function onSquareClick(e) {
+  if (gameOver) return;
 
-  // Block clicks during AI delay/turn
-  if (engineThinking) {
-    statusEl.textContent = 'Computer turn - please wait';
+  const i = parseInt(e.currentTarget.dataset.index, 10);
+
+  // Identify this user's turn
+  const myTurn = (whiteToMove && playerColor === 'white') || (!whiteToMove && playerColor === 'black');
+  if (!myTurn) {
+    statusEl.textContent = "Opponent's turn";
     return;
   }
 
-  const i = parseInt(e.currentTarget.dataset.index,10);
-
-  
   // Clicking the same square cancels selection
   if (selected !== null && i === selected) {
     clearSelection();
     render();
-    saveSession();
     return;
   }
 
   // Valid move to a highlighted square
-  if(selected !== null && legalTargets.has(i)){
+  if (selected !== null && legalTargets.has(i)) {
     const fromBefore = selected;
 
     // If this move is a promotion, open UI and return
     if (needsPromotion(fromBefore, i)) {
-      openPromotion(fromBefore, i);
+      openPromotion(fromBefore, i, (promotion) => {
+        sendMoveOnline(fromBefore, i, promotion); // Send promoted move online
+      });
+      clearSelection();
+      render();
       return;
     }
 
-    // Normal (non-promotion) flow
-    movePiece(selected, i);
-    onHumanMoveApplied(fromBefore, i); // sync AI + maybe reply
+    // Normal (non-promotion) move
+    sendMoveOnline(fromBefore, i); // Send move online
     clearSelection();
     render();
-    saveSession();
     return;
   }
 
   // Clicking elsewhere while a square is selected
-  if(selected !== null && !legalTargets.has(i)){
+  if (selected !== null && !legalTargets.has(i)) {
     playSfx('illegal');
   }
 
   // Select a piece
   const pc = board[i];
-  if(pc && ((whiteToMove && isWhite(pc)) || (!whiteToMove && isBlack(pc)))){
+  if (pc && ((whiteToMove && isWhite(pc)) || (!whiteToMove && isBlack(pc)))) {
     selected = i;
     legalTargets = new Set(legalMoves(i));
-    statusEl.textContent = legalTargets.size ? 'Select a highlighted square to move' : 'No legal moves for this piece';
+    statusEl.textContent = legalTargets.size
+      ? 'Select a highlighted square to move'
+      : 'No legal moves for this piece';
     render();
     return;
   }
@@ -605,6 +615,8 @@ function onSquareClick(e){
   clearSelection();
   render();
 }
+
+
 
 function clearSelection(){
   selected = null;
@@ -744,6 +756,75 @@ function movePiece(from, to, promotion){
     kingInCheckIndex = null;
   }
 }
+
+function sendMoveOnline(from, to, promotion) {
+  // Only allow if it's your turn
+  const myTurn = (whiteToMove && myPlayerColor === 'white') || (!whiteToMove && myPlayerColor === 'black');
+  if (!myTurn) {
+    statusEl.textContent = "Not your turn";
+    playSfx('illegal');
+    return;
+  }
+
+  // Apply move locally
+  movePiece(from, to, promotion);
+  render();
+  renderCapturedPanels();
+  saveSession();
+
+  // Prepare game state to sync
+  const update = {
+    board: board.slice(),
+    whiteToMove,
+    canCastleWK,
+    canCastleWQ,
+    canCastleBK,
+    canCastleBQ,
+    enPassantTarget,
+    lastFrom,
+    lastTo,
+    kingInCheckIndex,
+    capturedByWhite,
+    capturedByBlack,
+    moveLog,
+    timestamp: Date.now(),
+    lastPlayer: myEmail
+  };
+
+  // Update Firebase
+  gameRef.set(update).catch(err => console.error("Failed to send move:", err));
+}
+
+
+gameRef.on('value', (snapshot) => {
+  const gameState = snapshot.val();
+  if (!gameState) return;
+
+  // Only update if board changed
+  if (JSON.stringify(board) !== JSON.stringify(gameState.board)) {
+    board = gameState.board.slice();
+    whiteToMove = gameState.whiteToMove;
+    canCastleWK = !!gameState.canCastleWK;
+    canCastleWQ = !!gameState.canCastleWQ;
+    canCastleBK = !!gameState.canCastleBK;
+    canCastleBQ = !!gameState.canCastleBQ;
+    enPassantTarget = gameState.enPassantTarget ?? null;
+    lastFrom = gameState.lastFrom ?? null;
+    lastTo = gameState.lastTo ?? null;
+    kingInCheckIndex = gameState.kingInCheckIndex ?? null;
+    capturedByWhite = gameState.capturedByWhite ?? [];
+    capturedByBlack = gameState.capturedByBlack ?? [];
+    moveLog = gameState.moveLog ?? [];
+
+    render();
+    renderCapturedPanels();
+  }
+
+  // Show turn info
+  const myTurn = (whiteToMove && myPlayerColor === 'white') || (!whiteToMove && myPlayerColor === 'black');
+  statusEl.textContent = myTurn ? "Your turn" : "Opponent's turn";
+});
+
 
 // ---------- Rules ----------
 function legalMoves(i){
