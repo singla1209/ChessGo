@@ -555,14 +555,7 @@ function onSquareClick(e){
 
   const i = parseInt(e.currentTarget.dataset.index,10);
 
-   if (typeof window.myColor !== 'undefined' && window.myColor !== null) {
-    const isMyTurn = (whiteToMove && window.myColor === 'white') || (!whiteToMove && window.myColor === 'black');
-    if (!isMyTurn) {
-      statusEl.textContent = "Waiting for opponent";
-      return;
-    }
-  }
-
+  
   // Clicking the same square cancels selection
   if (selected !== null && i === selected) {
     clearSelection();
@@ -614,39 +607,6 @@ function clearSelection(){
   legalTargets.clear();
   if(!gameOver) statusEl.textContent = 'Select a piece';
 }
-
-/* Override movePiece to restrict by player and turn */
-const oldMovePiece = window.movePiece;
-window.movePiece = function(from, to){
-  if(!window.aiMode){
-    if(!currentUser){
-      alert("Not signed in");
-      return;
-    }
-    if(!window.myColor){
-      alert("You are not a player in this game");
-      return;
-    }
-    const userIsWhite = (window.myColor === 'white');
-    const userIsBlack = (window.myColor === 'black');
-
-    if(whiteToMove && !userIsWhite){
-      alert("Not your turn (White to move)");
-      return;
-    }
-    if(!whiteToMove && !userIsBlack){
-      alert("Not your turn (Black to move)");
-      return;
-    }
-    const piece = board[from];
-    if((userIsWhite && !isWhite(piece)) || (userIsBlack && !isBlack(piece))){
-      alert("You can only move your own pieces");
-      return;
-    }
-  }
-  oldMovePiece(from, to);
-  pushMove(from, to);
-};
 
 // Replace your existing movePiece with this promotion-aware version
 function movePiece(from, to, promotion){

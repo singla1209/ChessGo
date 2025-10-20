@@ -50,7 +50,6 @@ logoutBtn.onclick = async () => {
     await remove(ref(db, 'presence/' + currentUser.uid));
   }
   await signOut(auth);
-  window.myColor = null;  // Clear player color on logout
 };
 
 let currentUser = null;
@@ -66,12 +65,13 @@ onAuthStateChanged(auth, (user) => {
 
     listenOnlineUsers();
     listenIncomingChallenges();
+
   } else {
     userList.innerHTML = '';
     currentGameId = null;
-    window.myColor = null;
   }
 });
+
 
 function listenOnlineUsers() {
   onValue(ref(db, 'presence'), (snapshot) => {
@@ -100,7 +100,7 @@ function listenOnlineUsers() {
   });
 }
 
-// Send a challenge invitation or join existing
+// Send a challenge invitation
 async function createOrJoinGame(opponentUid, opponentEmail) {
   if(!currentUser) return alert("Login required");
 
@@ -111,9 +111,8 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
   const gameRef = ref(db, 'games/' + gameId);
   const gameSnap = await get(gameRef);
 
-  // If no game exists, creator becomes white and opponent black
   if(!gameSnap.exists()) {
-    const initBoard = yourInitialBoardState(); // Your chess board starter function must be defined!
+    const initBoard = yourInitialBoardState(); // Your chess board starter
     await set(gameRef, {
       players: { white: currentUser.uid, black: opponentUid },
       turn: 'white',
@@ -122,7 +121,7 @@ async function createOrJoinGame(opponentUid, opponentEmail) {
       status: 'live',
       lastUpdateBy: null
     });
-  } 
+  }
 
   listenGame(gameId);
 
@@ -143,7 +142,6 @@ function listenIncomingChallenges() {
       const challenge = snap.val();
       if(confirm(`${challenge.email} challenged you to a game. Accept?`)){
         currentGameId = challenge.gameId;
-        window.aiMode = false;   // Disable AI after accepting challenge
         listenGame(currentGameId);
       }
       // Remove challenge after prompt
@@ -152,34 +150,25 @@ function listenIncomingChallenges() {
   });
 }
 
+// Listen for game state changes and update UI
+let playerColor = null;
+
 function listenGame(gameId){
   const gameRef = ref(db, 'games/' + gameId);
   onValue(gameRef, (snap) => {
     if(!snap.exists()) return;
     const data = snap.val();
 
-    // Assign local player color based on UID comparison
-    if (currentUser && data.players) {
-      if (currentUser.uid === data.players.white) {
-        window.myColor = 'white';
-      } else if (currentUser.uid === data.players.black) {
-        window.myColor = 'black';
-      } else {
-        window.myColor = null; // spectator or not a player
-      }
-    } else {
-      window.myColor = null;
-    }
-
-    window.aiMode = !(data.players && data.players.white && data.players.black);
-
     board = data.board;
     whiteToMove = (data.turn === 'white');
-    render();
 
-    // Optionally update status UI
-    const you = window.myColor ? `You are playing ${window.myColor}` : 'Spectator';
-    statusEl.textContent = `${you}. ${(whiteToMove ? 'White' : 'Black')} to move.`;
+    // Identify this user's color
+    if (currentUser && data.players) {
+      if (currentUser.uid === data.players.white) playerColor = 'white';
+      else if (currentUser.uid === data.players.black) playerColor = 'black';
+    }
+
+    render();
   });
 }
 
@@ -195,48 +184,15 @@ async function pushMove(from, to){
   });
 }
 
-// Override movePiece to restrict moves based on user color and turn
+// Wrap existing movePiece to push changes
 const oldMovePiece = window.movePiece;
 window.movePiece = function(from, to){
-  if(!window.aiMode){
-    if(!currentUser){
-      alert("Not signed in");
-      return;
-    }
-    if(!window.myColor){
-      alert("You are not a player in this game");
-      return;
-    }
-    const userIsWhite = (window.myColor === 'white');
-    const userIsBlack = (window.myColor === 'black');
-    if(whiteToMove && !userIsWhite){
-      alert("Not your turn (White to move)");
-      return;
-    }
-    if(!whiteToMove && !userIsBlack){
-      alert("Not your turn (Black to move)");
-      return;
-    }
-    const piece = board[from];
-    if((userIsWhite && !isWhite(piece)) || (userIsBlack && !isBlack(piece))){
-      alert("You can only move your own pieces");
-      return;
-    }
+  // Prevent moves if it’s not this player’s turn
+  if ((whiteToMove && playerColor !== 'white') || (!whiteToMove && playerColor !== 'black')) {
+    alert("It's not your turn!");
+    return;
   }
+
   oldMovePiece(from, to);
   pushMove(from, to);
 };
-
-// You must implement or import this function returning the chess starting position array
-function yourInitialBoardState() {
-  return [
-    'r','n','b','q','k','b','n','r',
-    'p','p','p','p','p','p','p','p',
-    '','','','','','','','',
-    '','','','','','','','',
-    '','','','','','','','',
-    '','','','','','','','',
-    'P','P','P','P','P','P','P','P',
-    'R','N','B','Q','K','B','N','R'
-  ];
-}
