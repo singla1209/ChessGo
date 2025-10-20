@@ -214,10 +214,14 @@ function tryRestoreSession() {
     renderCapturedPanels(); // draw trays after render
 
     // If AI should move now, schedule it
-    if (window.aiMode && !gameOver) {
-      const aiTurn = (whiteToMove && window.aiSide === 'white') || (!whiteToMove && window.aiSide === 'black');
-      if (aiTurn) maybeAIMove();
-    }
+// Disable AI entirely when an online game is active (Firebase sync)
+if (!window.currentGameId && window.aiMode && !gameOver) {
+  const aiTurn =
+    (whiteToMove && window.aiSide === 'white') ||
+    (!whiteToMove && window.aiSide === 'black');
+  if (aiTurn) maybeAIMove();
+}
+
 
     return true;
   } catch (e) {
@@ -1020,8 +1024,13 @@ function onHumanMoveApplied(fromIdx, toIdx, promotion){
   } catch (e) {
     console.warn('AI sync warning:', e);
   }
-  maybeAIMove();
+
+  // Only run AI if NOT in an online game
+  if (!window.currentGameId) {
+    maybeAIMove();
+  }
 }
+
 
 async function maybeAIMove(){
   if (!window.aiMode || gameOver || engineThinking) return;
