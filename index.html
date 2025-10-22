@@ -18,6 +18,16 @@
     <div id="turn">Turn: White</div>
     <div id="status">Click Start Game</div>
   </div>
+  
+  <div>
+ <input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button id="signup">Sign up</button>
+<button id="signin">Sign in</button>
+<button id="logout">Logout</button>
+<h3>Online Users</h3>
+<ul id="user-list"></ul> <!-- List of all online users, except self -->
+  </div>
 
   <div class="audio-bar">
     <!-- <button id="enable-audio">Enable sound</button> 
@@ -38,9 +48,9 @@
 
   <div class="top-bar">
 
-  <div id="restart-game" class="button">
+    <div id="restart-game" class="button">
   <i class="fa-solid fa-rotate-right"></i>
-  <div class="label">START-MANUALLY</div>
+  <div class="label">RESTART</div>
 </div>
 
 <div id="start-game" class="button">
@@ -102,5 +112,6 @@
 
   <!-- Game logic -->
   <script src="app.js"></script>
+   <script type="module" src="firebase.js"></script>
 </body>
 </html>
