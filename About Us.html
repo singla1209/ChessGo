@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>About Us — Chess Rules Guide</title>
+  <style>
+    :root{--bg:#0f172a;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--footter: #0d64e0;--glass: rgba(255,255,255,0.04)}
+    body{font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; background:linear-gradient(180deg,#07102a 0%, #071322 100%); color:#e6eef8; margin:0; padding:24px}
+    .wrap{max-width:1000px;margin:0 auto}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+    h1{margin:0;font-size:28px}
+    h2{color:var(--accent);font-size:22px;margin:24px 0 12px 0}
+    p.lead{color:var(--muted);margin-top:6px}
+    section.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:24px;border-radius:12px;margin-bottom:14px}
+    .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:16px}
+    .team-member{background:var(--glass);padding:16px;border-radius:10px;text-align:center}
+    .team-member h3{color:var(--accent);margin:8px 0 4px 0;font-size:18px}
+    .team-member p{color:var(--muted);font-size:0.9em;margin:4px 0}
+    .icon{width:60px;height:60px;background:var(--accent);border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:28px}
+    .mission{background:#133544;padding:16px;border-radius:10px;color:#cfeee6;margin:16px 0}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+    .stat-box{background:var(--card);padding:16px;border-radius:10px;text-align:center}
+    .stat-box .number{font-size:32px;font-weight:bold;color:var(--accent)}
+    .stat-box .label{color:var(--muted);font-size:0.9em;margin-top:4px}
+    .btn{display:inline-block;padding:12px 24px;background:var(--accent);color:#fff;text-decoration:none;border-radius:8px;margin-top:16px;transition:opacity 0.2s}
+    .btn:hover{opacity:0.85}
+    footer{margin-top:32px;color:var(--muted);font-size:0.9em;text-align:center;padding-top:16px;border-top:1px solid rgba(255,255,255,0.1)}
+    @media (max-width:700px){body{padding:12px}h1{font-size:22px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>♟️ About Us</h1>
+        <p class="lead">Empowering chess players worldwide with comprehensive learning resources</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Our Mission</h2>
+      <div class="mission">
+        <p><strong>We believe chess is more than a game—it's a powerful tool for developing critical thinking, patience, and strategic planning.</strong></p>
+        <p>Our mission is to make chess accessible to everyone, from complete beginners to advanced players, by providing clear, comprehensive, and easy-to-understand rules and strategies.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>What We Do</h2>
+      <p>We provide:</p>
+      <ul style="color:var(--muted);line-height:1.8">
+        <li><strong style="color:#e6eef8">Complete Chess Rules:</strong> From basic piece movements to advanced tournament regulations</li>
+        <li><strong style="color:#e6eef8">Learning Resources:</strong> Step-by-step guides for players at every level</li>
+        <li><strong style="color:#e6eef8">Strategy Insights:</strong> Tactical patterns and opening principles</li>
+        <li><strong style="color:#e6eef8">Practice Tools:</strong> Interactive examples and exercises</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Our Impact</h2>
+      <div class="stats">
+        <div class="stat-box">
+          <div class="number">10K+</div>
+          <div class="label">Active Learners</div>
+        </div>
+        <div class="stat-box">
+          <div class="number">50+</div>
+          <div class="label">Lessons & Guides</div>
+        </div>
+        <div class="stat-box">
+          <div class="number">25+</div>
+          <div class="label">Countries Reached</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Our Team</h2>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="icon">👨‍💻</div>
+          <h3>Chess Educators</h3>
+          <p>Experienced players and certified coaches who understand how to teach chess effectively</p>
+        </div>
+        <div class="team-member">
+          <div class="icon">🎨</div>
+          <h3>Content Creators</h3>
+          <p>Writers and designers dedicated to making learning materials clear and engaging</p>
+        </div>
+        <div class="team-member">
+          <div class="icon">💡</div>
+          <h3>Developers</h3>
+          <p>Tech enthusiasts building tools and platforms to enhance the learning experience</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Why Choose Us?</h2>
+      <p style="color:var(--muted);line-height:1.8">
+        Unlike scattered resources across the web, we provide <strong style="color:#e6eef8">one comprehensive guide</strong> that covers everything you need to know about chess. Our content is:
+      </p>
+      <ul style="color:var(--muted);line-height:1.8">
+        <li><strong style="color:#e6eef8">Beginner-Friendly:</strong> Clear explanations without overwhelming jargon</li>
+        <li><strong style="color:#e6eef8">Comprehensive:</strong> From basics to advanced tournament rules</li>
+        <li><strong style="color:#e6eef8">Always Updated:</strong> Regularly revised to reflect FIDE standards</li>
+        <li><strong style="color:#e6eef8">Free & Accessible:</strong> No paywalls, available to everyone</li>
+      </ul>
+      <a href="index.html" class="btn">Back to Chess Rules</a>
+    </section>
+
+    <footer>
+      <p>&copy; 2025 Chess Rules Guide. Made with ♟️ for chess enthusiasts worldwide.</p>
+      <p style="margin-top:8px">Questions? Contact us at <a href="mailto:info@chessrules.com" style="color:var(--accent)">info@chessrules.com</a></p>
+    </footer>
+  </div>
+</body>
+</html>
