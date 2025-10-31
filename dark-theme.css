@@ -414,7 +414,7 @@ body {
   .button i { font-size: 15px; }
   .label { font-size: 10px; }
   .ai-btn { padding: 5px 9px; font-size: 12px; }
-  .top-bar { flex-direction: column; gap: 8px; margin: 8px auto; }
+  .top-bar { flex-direction: row; gap: 8px; margin: 8px auto; }
   .promo-box { padding: 17px; min-width: unset; }
   .promo-title { margin-bottom: 13px; font-size: 15px; }
   .promo-buttons { gap: 16px; }
